@@ -1,0 +1,506 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Marseille · Lycées pro + itinéraires (Google)</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <style>
+    :root{
+      --public:#16a34a;   /* lycées publics */
+      --prive:#7c3aed;    /* lycées privés */
+      --school-bg:#f1f5f9; --school-bd:#cbd5e1; --school-fg:#111827;
+      --m1:#2563eb; --m2:#ef4444; --tram:#10b981; --walk:#9ca3af; --bus:#f59e0b;
+    }
+    html, body { height:100%; margin:0; font-family: Inter, system-ui, sans-serif; }
+    #map{ height:100%; width:100%; }
+    .school-label{ color:var(--school-fg); font-weight:400; font-size:10px; background:var(--school-bg); border:1px solid var(--school-bd); padding:1px 3px; border-radius:4px; box-shadow:0 1px 2px rgba(0,0,0,.08); }
+    .panel{ position:fixed; z-index:10000; background:#ffffffcc; backdrop-filter:saturate(1.1) blur(4px); border:1px solid #e5e7eb; border-radius:10px; box-shadow:0 6px 20px rgba(0,0,0,.08); padding:10px 12px; max-width:380px; font-size:13px; color:#111827; }
+    #routePanel{ right:12px; top:12px; display:none; }
+    #formsPanel{ position:fixed; left:64px; bottom:160px; display:none; max-height:44vh; overflow:auto; }
+    .panel h4{ margin:0 0 6px; font-size:13px; font-weight:700; }
+    .time{ display:inline-block; padding:2px 8px; border-radius:999px; background:#111827; color:#fff; font-weight:700; }
+    .tag{ display:inline-block; padding:2px 6px; border-radius:6px; background:#f1f5f9; border:1px solid #e5e7eb; font-size:12px; white-space:normal; margin:2px; }
+    .row{ margin-top:6px; }
+    .gt-logo{ width:28px; height:28px; display:grid; place-items:center; border-radius:50%; background:#fff; border:2px solid #fff; box-shadow:0 1px 3px rgba(0,0,0,.35); overflow:hidden; }
+.gt-logo img{ width:100%; height:100%; object-fit:cover; display:block; }
+.brandLogo{ height:22px; width:auto; display:block; }
+    .toolbar{ position:fixed; left:12px; top:12px; z-index:10001; background:#fff; border:1px solid #e5e7eb; border-radius:10px; padding:8px 10px; font-size:12px; display:flex; flex-direction:column; gap:6px; }
+    .toolbar .from{ display:flex; align-items:center; gap:6px; }
+    .toolbar input{ width:260px; padding:6px 8px; font-size:12px; border:1px solid #e5e7eb; border-radius:8px; }
+    .toolbar button{ font-size:12px; padding:6px 8px; border:1px solid #e5e7eb; background:#f8fafc; border-radius:8px; cursor:pointer; }
+    #status{ position:fixed; left:50%; transform:translateX(-50%); bottom:18px; z-index:10002; background:#0f172acc; color:#e2e8f0; padding:6px 10px; border-radius:8px; font:12px/1.4 Inter,system-ui; }
+/* Légendes & styles supplémentaires */
+.legend{ display:flex; gap:10px; margin-top:6px; flex-wrap:wrap; }
+.leg{ display:flex; align-items:center; gap:6px; font-size:12px; color:#374151; }
+.leg i{ display:inline-block; width:20px; height:4px; border-radius:2px; }
+.leg .m1{ background:var(--m1); } .leg .m2{ background:var(--m2); } .leg .tram{ background:var(--tram); } .leg .bus{ background:var(--bus); } .leg .walk{ background:var(--walk); }
+.panel.small{ padding:8px 10px; font-size:12px; }
+#legendSchools{ position:fixed; left:12px; bottom:12px; z-index:10002; }
+.dot{ width:10px; height:10px; border-radius:50%; display:inline-block; margin-right:6px; border:1px solid #fff; box-shadow:0 0 0 1px #e5e7eb inset; }
+.dot.pub{ background:var(--public); }
+.dot.priv{ background:var(--prive); }
+/* Remonter légèrement le zoom +/- */
+.leaflet-bottom.leaflet-left .leaflet-control-zoom{ margin-bottom:120px; }
+  #brandBR{ position:fixed; right:12px; bottom:12px; z-index:10002; background:transparent; border:none; box-shadow:none; }
+#brandBR img{ height:132px;  width:auto; opacity:.95; display:block; }
+.gt-emoji{ width:26px; height:26px; display:grid; place-items:center; border-radius:999px; background:#fff; border:2px solid #fff; box-shadow:0 1px 3px rgba(0,0,0,.35); font-size:14px; }
+.toolbar .filter{ display:flex; align-items:center; gap:6px; }
+.count{ padding:2px 6px; border-radius:999px; background:#eef2ff; border:1px solid #e5e7eb; font-size:11px; color:#334155; }
+</style>
+</head>
+<body>
+<noscript>Active JavaScript pour voir la carte.</noscript>
+<div id="map"></div>
+<div class="toolbar">
+  <div class="from">
+    <input id="originInput" type="text" placeholder="Adresse de départ (ex: 26 Av. des Caillols)" />
+    <button id="useLoc" title="Utiliser ma position">📍 Ma position</button>
+  </div>
+  <div class="filter">
+    <input id="filterInput" type="text" placeholder="Rechercher une formation (ex: électricité, enfance…)" />
+    <button id="applyFilter">Filtrer</button>
+    <button id="resetFilter">Réinitialiser</button>
+    <span id="filterCount" class="count" style="display:none"></span>
+  </div>
+</div>
+<div id="routePanel" class="panel">
+  <h4>Itinéraire (départ 07:30)</h4>
+  <div>Temps total : <span id="routeTime" class="time">—</span></div>
+  <div id="routeSteps" class="row"></div>
+  <div class="legend">
+    <div class="leg"><i class="m1"></i>Métro M1</div>
+    <div class="leg"><i class="m2"></i>Métro M2</div>
+    <div class="leg"><i class="tram"></i>Tram</div>
+    <div class="leg"><i class="bus"></i>Bus</div>
+    <div class="leg"><i class="walk"></i>À pied</div>
+  </div>
+  <button id="clearRoute">Effacer l'itinéraire</button>
+</div>
+<div id="formsPanel" class="panel" style="left:64px; bottom:160px; display:none; max-height:44vh; overflow:auto;">
+  <h4 id="formsTitle">Formations</h4>
+  <div id="formsContent"></div>
+</div>
+<div id="legendSchools" class="panel small">
+  <div><span class="dot pub"></span>Public</div>
+  <div><span class="dot priv"></span>Privé</div>
+  <div style="margin-top:6px;font-size:11px;color:#64748b">outil développé par <strong>Rachid Zerrouki</strong></div>
+</div>
+<div id="brandBR"><img src="https://i.ibb.co/Pv8MYpVt/logo-college-png.png" alt="Logo collège" /></div>
+<div id="status">Initialisation…</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+// ----- Carte Leaflet d'abord (pour éviter toute page blanche) -----
+const map = L.map('map').setView([43.295, 5.375], 12);
+map.zoomControl.setPosition('bottomleft');
+L.tileLayer('https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png', { attribution:'© OpenStreetMap, © CARTO', subdomains:'abcd', maxZoom:19 }).addTo(map);
+
+const statusEl = document.getElementById('status');
+function setStatus(t){ if(statusEl) statusEl.textContent=t; }
+function getCSS(v){ return getComputedStyle(document.documentElement).getPropertyValue(v).trim()||'#000'; }
+
+// Panneaux
+const routeLayerGroup = L.layerGroup().addTo(map);
+const schoolMarkers = []; // { marker, data, coords, searchText }
+const routePanel = document.getElementById('routePanel');
+const routeTimeEl = document.getElementById('routeTime');
+const routeStepsEl = document.getElementById('routeSteps');
+const formsPanel = document.getElementById('formsPanel');
+const formsTitle = document.getElementById('formsTitle');
+const formsContent = document.getElementById('formsContent');
+
+document.getElementById('clearRoute').onclick = ()=>{ routeLayerGroup.clearLayers(); routePanel.style.display='none'; };
+
+// ----- Données -----
+const LYCEES = [
+  { nom:"Lycée Don Bosco", statut:"Privé", adresse:"30 rue des Trois-Frères-Carasso, 13006 Marseille",
+    cap:["CAP Menuisier fabricant","CAP Métallier","CAP Signalétique et décors graphiques","CAP Électricien"],
+    bac:[],
+    seconde:["2nd pro Métiers des industries graphiques et de la communication","2nd pro Métiers des transitions numérique et énergétique","2nd pro Métiers du pilotage et de la maintenance d'installations automatisées"] },
+  { nom:"Lycée Frédéric Mistral", statut:"Public", adresse:"Boulevard Sainte-Anne, 13008 Marseille, France",
+    cap:["CAP Carrossier automobile","CAP Maintenance des véhicules – option véhicules légers","CAP Signalétique et décors graphiques"],
+    bac:[],
+    seconde:["2nd pro Métiers de la gestion administrative, du transport et de la logistique","2nd pro Métiers de la maintenance des matériels et des véhicules","2nd pro Métiers de la relation client"] },
+  { nom:"Lycée Blaise Pascal", statut:"Public", adresse:"49 Traverse Capron, 13012 Marseille",
+    cap:["CAP Cordonnerie multiservice","CAP Opérateur en appareillage orthopédique – spécialité orthoprothèse"],
+    bac:[],
+    seconde:["2nd pro Métiers de la gestion administrative, du transport et de la logistique","2nd pro Métiers de la réalisation d'ensembles mécaniques et industriels"] },
+  { nom:"Lycée Simone Veil", statut:"Public", adresse:"Avenue des Pâquerettes, BP 60149, 13013 Marseille",
+    cap:[], bac:["Bac pro Hygiène, propreté, stérilisation (HPS)"], seconde:[] },
+  { nom:"Lycée Jean Perrin", statut:"Public", adresse:"74 Rue Verdillon, 13010 Marseille",
+    cap:["CAP Composites, plastiques chaudronnés","CAP Réalisations industrielles en chaudronnerie ou soudage – option A chaudronnerie"],
+    bac:[],
+    seconde:["2nd pro Métiers de la réalisation d'ensembles mécaniques et industriels","2nd pro Métiers du pilotage et de la maintenance d'installations automatisées"] },
+  { nom:"Lycée Antonin Artaud", statut:"Public", adresse:"25 chemin Notre-Dame-de-la-Consolation, 13013 Marseille",
+    cap:["CAP Électricien"], bac:["Bac pro Métiers de l'électricité et de ses environnements connectés (MELEC)"],
+    seconde:["2nd pro Métiers des transitions numérique et énergétique"] },
+  { nom:"Lycée Hôtelier Jean-Paul Passédat", statut:"Public", adresse:"114 avenue André-Zenatti, 13008 Marseille",
+    cap:["CAP Boulanger","CAP Commercialisation et services en hôtel-café-restaurant (CSHCR)","CAP Cuisine","CAP Pâtissier"],
+    bac:[], seconde:["2nd pro Métiers de l'alimentation","2nd pro Métiers de l'hôtellerie-restauration"] },
+  { nom:"Lycée Colbert", statut:"Public", adresse:"13 Rue Capitaine Dessemond, 13007 Marseille",
+    cap:["CAP Accompagnant éducatif petite enfance (AEPE)","CAP Agent accompagnant au grand âge","CAP Production et service en restaurations (rapide, collective, cafétéria) (PSR)","CAP Équipier polyvalent du commerce (EPC)"],
+    bac:[], seconde:["2nd pro Métiers de la gestion administrative, du transport et de la logistique","2nd pro Métiers de la relation client"] },
+  { nom:"Lycée Poinso-Chapuis", statut:"Public", adresse:"6–8 avenue Viton, 13008 Marseille",
+    cap:["CAP Maintenance nautique","CAP Ébéniste"], bac:[], seconde:["2nd pro Métiers de l'agencement, de la menuiserie et de l'ameublement"] },
+  { nom:"Lycée Jacques Raynaud", statut:"Privé", adresse:"4 boulevard Jean-Labro, 13013 Marseille",
+    cap:["CAP Agent de sécurité","CAP Installateur en froid et conditionnement d'air","CAP Maintenance des véhicules – option véhicules légers"],
+    bac:[], seconde:["2nd pro Métiers des transitions numérique et énergétique","2nd pro Métiers du pilotage et de la maintenance d'installations automatisées"] },
+  { nom:"Lycée La Floride", statut:"Public", adresse:"54 Bd Gay Lussac, 13014 Marseille",
+    cap:["CAP Conducteur routier de marchandises – option livraisons de proximité","CAP Conducteur routier de marchandises – option livraisons longue distance","CAP Maintenance des véhicules – option motocycles","CAP Maintenance des véhicules – option véhicules de transport routier","CAP Opérateur/opératrice logistique","CAP Électricien"],
+    bac:[], seconde:["2nd pro Métiers de la gestion administrative, du transport et de la logistique","2nd pro Métiers de la maintenance des matériels et des véhicules","2nd pro Métiers des transitions numérique et énergétique"] },
+  { nom:"Lycée Edmond Rostand", statut:"Public", adresse:"68 boulevard Émile-Sicard, 13008 Marseille",
+    cap:["CAP Accompagnant éducatif petite enfance (AEPE)"], bac:[], seconde:["2nd pro Métiers de la gestion administrative, du transport et de la logistique"] },
+  { nom:"Lycée Camille Jullian", statut:"Public", adresse:"50 boulevard de la Barasse, 13011 Marseille",
+    cap:["CAP Agent accompagnant au grand âge","CAP Production et service en restaurations (PSR)","CAP Équipier polyvalent du commerce (EPC)"],
+    bac:[], seconde:["2nd pro Métiers de la gestion administrative, du transport et de la logistique","2nd pro Métiers de la relation client"] },
+  { nom:"Lycée La Calade – Jane Vialle", statut:"Public", adresse:"430 chemin de la Madrague-Ville, 13015 Marseille",
+    cap:["CAP Esthétique cosmétique parfumerie","CAP Métiers de la mode – Vêtement flou","CAP Équipier polyvalent du commerce (EPC)"],
+    bac:[], seconde:["2nd pro Métiers de la gestion administrative, du transport et de la logistique","2nd pro Métiers de la relation client"] },
+  { nom:"Lycée Saint-Michel", statut:"Privé", adresse:"75 rue Saint-Savournin, 13005 Marseille",
+    cap:[], bac:[], seconde:["2nd pro Métiers de la gestion administrative, du transport et de la logistique","2nd pro Métiers de la relation client"] },
+  { nom:"Lycée Grande Bastide", statut:"Privé", adresse:"32 traverse Pastré, 13009 Marseille",
+    cap:[], bac:[], seconde:["2nd pro Métiers de l'hôtellerie-restauration"] },
+  { nom:"Lycée des Calanques", statut:"Public", adresse:"89 Traverse Parangon, 13008 Marseille, France",
+    cap:["CAPa Jardinier paysagiste"], bac:[], seconde:["2nd pro Nature-Jardin-Paysage-Forêt"] },
+  { nom:"Lycée de l'Estaque", statut:"Public", adresse:"310 Rue Rabelais, 13016 Marseille, France",
+    cap:["CAP Agent de sécurité","CAP Maintenance nautique","CAP Électricien","CAP Équipier polyvalent du commerce"],
+    bac:[], seconde:["2nd pro Métiers de la relation client","2nd pro Métiers des transitions numérique et énergétique"] },
+  { nom:"Lycée Jean-Baptiste Brochier", statut:"Public", adresse:"9 Bd Mireille Lauze, 13010 Marseille",
+    cap:["CAP Accompagnant éducatif petite enfance (AEPE)","CAP Maroquinerie","CAP Métiers de la mode – Vêtement flou"],
+    bac:[], seconde:["2nd pro Métiers de la relation client"] },
+  { nom:"Lycée La Viste", statut:"Public", adresse:"30 Traverse Bonnet, 13015 Marseille",
+    cap:["CAP Accompagnant éducatif petite enfance (AEPE)","CAP Production et service en restaurations (PSR)","CAP Équipier polyvalent du commerce (EPC)"],
+    bac:[], seconde:["2nd pro Métiers de la relation client"] },
+  { nom:"Lycée Ampère", statut:"Public", adresse:"56 Bd Romain Rolland, 13010 Marseille",
+    cap:["CAP Agent de sécurité","CAP Installateur en froid et conditionnement d'air","CAP Électricien"],
+    bac:[], seconde:["2nd pro Métiers des transitions numérique et énergétique"] }
+];
+
+const DEFAULT_ORIGIN = { lat:43.2946, lon:5.4522, label:'Collège Germaine Tillion' }; // ≈ Les Caillols
+let ORIGIN = { ...DEFAULT_ORIGIN };
+const COLLEGE_NAME = 'Collège Germaine Tillion';
+const COLLEGE_ADDR = '26 Avenue des Caillols, 13012 Marseille, France';
+let gtMarker = null;
+function placeCollegeMarker(lat, lon){
+  if(gtMarker){ map.removeLayer(gtMarker); }
+  gtMarker = L.marker([lat,lon],{ icon: L.divIcon({className:'', html:"<div class='gt-emoji'>🏫</div>", iconSize:[26,26], iconAnchor:[13,13]}) }).addTo(map);
+  gtMarker.bindTooltip(COLLEGE_NAME,{permanent:true,direction:'top',offset:[0,-14],className:'school-label'}).openTooltip();
+}
+let originMarker = L.circleMarker([ORIGIN.lat,ORIGIN.lon],{radius:7,color:'#2563eb',fillColor:'#3b82f6',fillOpacity:0.9,weight:2}).addTo(map);
+originMarker.bindTooltip('Départ : '+ORIGIN.label,{permanent:true,direction:'right',offset:[10,0],className:'school-label'}).openTooltip();
+
+
+// ----- Google Maps JS (Places + Geometry + Directions) -----
+window.__gmReady = function(){ try{ onGoogleReady(); }catch(e){ console.error(e); setStatus('Erreur Google'); } };
+</script>
+<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCjI0_fpHfli1TVjyDPmFGIQfhZkm7HGG4&language=fr&libraries=places,geometry&callback=__gmReady" defer></script>
+<script>
+function onGoogleReady(){
+  setStatus('Placement des lycées…');
+  const geocoder = new google.maps.Geocoder();
+  const placesSvc = new google.maps.places.PlacesService(document.createElement('div'));
+  const coordsCacheKey = 'gm_coords_v2';
+  let COORDS = {}; try{ COORDS = JSON.parse(localStorage.getItem(coordsCacheKey)||'{}'); }catch(e){ COORDS={}; }
+  const saveCoords = ()=> localStorage.setItem(coordsCacheKey, JSON.stringify(COORDS));
+  // Force re-géocodage pour La Floride (adresse corrigée)
+  if(COORDS["Lycée La Floride"]) { delete COORDS["Lycée La Floride"]; saveCoords(); }
+
+  // Autocomplete + position
+  const originInput = document.getElementById('originInput');
+  const useLocBtn = document.getElementById('useLoc');
+  try{
+    const ac = new google.maps.places.Autocomplete(originInput,{ componentRestrictions:{country:'fr'}, fields:['geometry','formatted_address','name'] });
+    ac.addListener('place_changed', ()=>{ const p=ac.getPlace(); if(p?.geometry?.location){ const lat=p.geometry.location.lat(), lon=p.geometry.location.lng(); setOrigin(lat,lon,p.formatted_address||p.name); }});
+  }catch(e){ console.warn('Autocomplete KO', e); }
+  originInput.addEventListener('keydown', e=>{ if(e.key==='Enter'){ const q=originInput.value.trim(); if(!q) return; placesSvc.findPlaceFromQuery({ query:q, fields:['geometry','name','formatted_address'] }, (res,status)=>{ if(status===google.maps.places.PlacesServiceStatus.OK && res?.[0]?.geometry){ const g=res[0].geometry.location; setOrigin(g.lat(), g.lng(), res[0].formatted_address||res[0].name); } }); } });
+  useLocBtn.onclick = ()=>{ if(navigator.geolocation){ navigator.geolocation.getCurrentPosition(pos=>{ setOrigin(pos.coords.latitude, pos.coords.longitude, 'Ma position'); }, ()=> alert('Position inaccessible.')); } else { alert('Géolocalisation non supportée.'); } };
+
+  function setOrigin(lat, lon, label){
+    ORIGIN = {lat, lon, label:label||'Départ'};
+    if(originMarker){ map.removeLayer(originMarker); }
+    originMarker = L.circleMarker([lat,lon],{radius:7,color:'#2563eb',fillColor:'#3b82f6',fillOpacity:0.9,weight:2}).addTo(map);
+    originMarker.bindTooltip('Départ : '+ORIGIN.label,{permanent:true,direction:'right',offset:[10,0],className:'school-label'}).openTooltip();
+  }
+
+  function decodePolylinePts(points){ const path = google.maps.geometry.encoding.decodePath(points); return path.map(p=>[p.lat(), p.lng()]); }
+  function drawPolyline(latlngs, color, weight, dash){ return L.polyline(latlngs, {color, weight:weight||4, opacity:0.95, dashArray:dash||null}).addTo(routeLayerGroup); }
+
+  function nextDepartureTime(hour, minute){
+    const now=new Date(); const t=new Date();
+    t.setHours(hour||7, minute||30, 0, 0);
+    if(t<=now) t.setDate(t.getDate()+1);
+    return t;
+  }
+
+  function routeTo(dest){
+    const svc = new google.maps.DirectionsService();
+    const departure = nextDepartureTime(7,30);
+    svc.route({
+      origin: new google.maps.LatLng(ORIGIN.lat, ORIGIN.lon),
+      destination: new google.maps.LatLng(dest.lat, dest.lon),
+      travelMode: google.maps.TravelMode.TRANSIT,
+      transitOptions: { modes: [google.maps.TransitMode.BUS, google.maps.TransitMode.SUBWAY, google.maps.TransitMode.TRAM], departureTime: departure },
+      region: 'FR', provideRouteAlternatives: false
+    }, (res,status)=>{
+      routeLayerGroup.clearLayers();
+      if(status!==google.maps.DirectionsStatus.OK){ setStatus('Itinéraire indisponible ('+status+')'); routePanel.style.display='none'; return; }
+      const leg = res.routes[0].legs[0];
+      let totalSec = 0; const stepsOut=[];
+      leg.steps.forEach(st=>{
+        totalSec += (st.duration?.value)||0;
+        if(st.travel_mode==='WALKING'){
+          const pts=st.polyline? decodePolylinePts(st.polyline.points):[]; drawPolyline(pts, getCSS('--walk'), 3, '4 4'); stepsOut.push('À pied — '+Math.round(((st.duration?.value)||0)/60)+' min');
+        } else if(st.travel_mode==='TRANSIT'){
+          const td=st.transit; let col=getCSS('--bus'); let label='Bus';
+          if(td?.line?.vehicle?.type==='SUBWAY'){
+            const sn=(td.line.short_name||'').toUpperCase(); if(sn.includes('M1')) col=getCSS('--m1'), label='Métro M1'; else if(sn.includes('M2')) col=getCSS('--m2'), label='Métro M2'; else label='Métro';
+          } else if(td?.line?.vehicle?.type==='TRAM'){ col=getCSS('--tram'); label=td.line.short_name||'Tram'; }
+          const pts=st.polyline? decodePolylinePts(st.polyline.points):[]; drawPolyline(pts, col, 5, null);
+          const stCnt = (td?.num_stops!=null)? (td.num_stops+' arrêts') : '';
+          const mins=Math.round(((st.duration?.value)||0)/60);
+          const name=(td && (td.line.short_name||td.line.name)) || label;
+          stepsOut.push(name+' — '+stCnt+' · '+mins+' min');
+        }
+      });
+      routeTimeEl.textContent = Math.round(totalSec/60)+' min';
+      routeStepsEl.innerHTML = '<ul style="margin:6px 0; padding-left:18px">'+ stepsOut.map(s=>'<li>'+s+'</li>').join('') +'</ul>';
+      routePanel.style.display='block';
+    });
+  }
+
+  function geocode(q){
+    return new Promise((resolve,reject)=>{
+      geocoder.geocode({ address:q, componentRestrictions:{ country:'FR' } }, (res,status)=>{
+        if(status==='OK' && res?.[0]){ const loc=res[0].geometry.location; resolve({lat:loc.lat(), lon:loc.lng()}); } else reject(status);
+      });
+    });
+  }
+
+  async function placeSchools(){
+    const markers=[];
+    for(const it of LYCEES){ if(it.hidden) continue;
+      const key=it.nom;
+      try{
+        const g = COORDS[key] || (await geocode(`${it.nom}, ${it.adresse}`));
+        COORDS[key]=g; saveCoords();
+        const col = it.statut==='Public'? getCSS('--public') : getCSS('--prive');
+        const m=L.circleMarker([g.lat,g.lon],{radius:5,color:col,fillColor:col,fillOpacity:1,weight:1}).addTo(map);
+        m.bindTooltip(it.nom,{permanent:true,direction:'top',offset:[0,-8],className:'school-label'}).openTooltip();
+        m.on('click',()=>{ routeTo({lat:g.lat,lon:g.lon}); showFormations(it); });
+        markers.push(m);
+        // Préparer le texte de recherche (CAP + Bac + Nom)
+        const searchText = normalize((it.cap||[]).join(' ') + ' ' + (it.bac||[]).join(' ') + ' ' + (it.seconde||[]).join(' ') + ' ' + it.nom);
+        schoolMarkers.push({ marker:m, data:it, coords:g, searchText:searchText.toLowerCase() });
+      }catch(e){ console.warn('Geocode lycée échoué', it.nom, e); }
+    }
+    if(markers.length){ const group=L.featureGroup(markers); map.fitBounds(group.getBounds().pad(0.2)); }
+    setStatus('Prêt. Choisis un lycée ou définis un départ.');
+  }
+
+  function showFormations(s){
+    let fp = document.getElementById('formsPanel');
+    let ft = document.getElementById('formsTitle');
+    let fc = document.getElementById('formsContent');
+    if(!fp){
+      fp = document.createElement('div'); fp.id='formsPanel'; fp.className='panel';
+      fp.style.position='fixed'; fp.style.left='64px'; fp.style.bottom='160px'; fp.style.maxHeight='44vh'; fp.style.overflow='auto';
+      ft = document.createElement('h4'); ft.id='formsTitle'; ft.textContent='Formations'; fp.appendChild(ft);
+      fc = document.createElement('div'); fc.id='formsContent'; fp.appendChild(fc);
+      document.body.appendChild(fp);
+    } else {
+      if(!ft){ ft = document.createElement('h4'); ft.id='formsTitle'; fp.prepend(ft); }
+      if(!fc){ fc = document.createElement('div'); fc.id='formsContent'; fp.appendChild(fc); }
+    }
+    ft.textContent = s.nom;
+    const cap = s.cap?.length ? ("<div class='row'><strong>CAP</strong><div>" + s.cap.map(x=>"<span class='tag'>"+x+"</span>").join('') + "</div></div>") : '';
+    const bac = s.bac?.length ? ("<div class='row'><strong>Bac pro</strong><div>" + s.bac.map(x=>"<span class='tag'>"+x+"</span>").join('') + "</div></div>") : '';
+    const sec = s.seconde?.length ? ("<div class='row'><strong>2nd pro</strong><div>" + s.seconde.map(x=>"<span class='tag'>"+x+"</span>").join('') + "</div></div>") : '';
+    fc.innerHTML = (cap + bac + sec) || "<em style='color:#64748b'>Aucune formation renseignée</em>";
+    fp.style.display = 'block';
+  }
+
+  geocode(COLLEGE_ADDR).then(g=>{ setOrigin(g.lat, g.lon, COLLEGE_NAME); placeCollegeMarker(g.lat, g.lon); }).catch(()=>{ placeCollegeMarker(ORIGIN.lat, ORIGIN.lon); });
+
+  // --- Mises à jour exhaustives des formations (et masquage Marie-Curie) ---
+  const OV = {
+    "Lycée Jacques Raynaud": {
+      cap:["CAP Agent de sécurité","CAP Installateur en froid et conditionnement d'air","CAP Maintenance des véhicules – option véhicules légers"],
+      bac:[],
+      seconde:["2nd pro Métiers des transitions numérique et énergétique","2nd pro Métiers du pilotage et de la maintenance d'installations automatisées"]
+    },
+    "Lycée de l'Estaque": {
+      cap:["CAP Agent de sécurité","CAP Maintenance nautique","CAP Électricien","CAP Équipier polyvalent du commerce"],
+      bac:[],
+      seconde:["2nd pro Métiers de la relation client","2nd pro Métiers des transitions numérique et énergétique"]
+    },
+    "Lycée La Calade – Jane Vialle": {
+      cap:["CAP Esthétique cosmétique parfumerie","CAP Métiers de la mode – Vêtement flou","CAP Équipier polyvalent du commerce"],
+      bac:[],
+      seconde:["2nd pro Métiers de la gestion administrative, du transport et de la logistique","2nd pro Métiers de la relation client"]
+    },
+    "Lycée Simone Veil": {
+      cap:[],
+      bac:["Bac pro Hygiène, propreté, stérilisation (HPS)"],
+      seconde:[]
+    },
+    "Lycée Antonin Artaud": {
+      cap:["CAP Électricien"],
+      bac:["Bac pro Métiers de l'électricité et de ses environnements connectés (MELEC)"],
+      seconde:["2nd pro Métiers des transitions numérique et énergétique"]
+    },
+    "Lycée Blaise Pascal": {
+      cap:["CAP Cordonnerie multiservice","CAP Opérateur en appareillage orthopédique – spécialité orthoprothèse"],
+      bac:[],
+      seconde:["2nd pro Métiers de la gestion administrative, du transport et de la logistique","2nd pro Métiers de la réalisation d'ensembles mécaniques et industriels"]
+    },
+    "Lycée Don Bosco": {
+      cap:["CAP Menuisier fabricant","CAP Métallier","CAP Signalétique et décors graphiques","CAP Électricien"],
+      bac:[],
+      seconde:["2nd pro Métiers des industries graphiques et de la communication","2nd pro Métiers des transitions numérique et énergétique","2nd pro Métiers du pilotage et de la maintenance d'installations automatisées"]
+    },
+    "Lycée Saint‑Michel": {
+      cap:[], bac:[],
+      seconde:["2nd pro Métiers de la gestion administrative, du transport et de la logistique","2nd pro Métiers de la relation client"]
+    },
+    "Lycée Colbert": {
+      cap:["CAP Accompagnant éducatif petite enfance (AEPE)","CAP Agent accompagnant au grand âge","CAP Production et service en restaurations (rapide, collective, cafétéria) (PSR)","CAP Équipier polyvalent du commerce (EPC)"],
+      bac:[],
+      seconde:["2nd pro Métiers de la gestion administrative, du transport et de la logistique","2nd pro Métiers de la relation client"]
+    },
+    "Lycée Ampère": {
+      cap:["CAP Agent de sécurité","CAP Installateur en froid et conditionnement d'air","CAP Électricien"],
+      bac:[],
+      seconde:["2nd pro Métiers des transitions numérique et énergétique"]
+    },
+    "Lycée Camille Jullian": {
+      cap:["CAP Agent accompagnant au grand âge","CAP Production et service en restaurations (PSR)","CAP Équipier polyvalent du commerce (EPC)"],
+      bac:[],
+      seconde:["2nd pro Métiers de la gestion administrative, du transport et de la logistique","2nd pro Métiers de la relation client"]
+    },
+    "Lycée Edmond Rostand": {
+      cap:["CAP Accompagnant éducatif petite enfance (AEPE)"],
+      bac:[],
+      seconde:["2nd pro Métiers de la gestion administrative, du transport et de la logistique"]
+    },
+    "Lycée La Floride": {
+      cap:["CAP Conducteur routier de marchandises – option livraisons de proximité","CAP Conducteur routier de marchandises – option livraisons longue distance","CAP Maintenance des véhicules – option motocycles","CAP Maintenance des véhicules – option véhicules de transport routier","CAP Opérateur/opératrice logistique","CAP Électricien"],
+      bac:[],
+      seconde:["2nd pro Métiers de la gestion administrative, du transport et de la logistique","2nd pro Métiers de la maintenance des matériels et des véhicules","2nd pro Métiers des transitions numérique et énergétique"]
+    },
+    "Lycée Jean Perrin": {
+      cap:["CAP Composites, plastiques chaudronnés","CAP Réalisations industrielles en chaudronnerie ou soudage – option A chaudronnerie"],
+      bac:[],
+      seconde:["2nd pro Métiers de la réalisation d'ensembles mécaniques et industriels","2nd pro Métiers du pilotage et de la maintenance d'installations automatisées"]
+    },
+    "Lycée Frédéric Mistral": {
+      cap:["CAP Carrossier automobile","CAP Maintenance des véhicules – option véhicules légers","CAP Signalétique et décors graphiques"],
+      bac:[],
+      seconde:["2nd pro Métiers de la gestion administrative, du transport et de la logistique","2nd pro Métiers de la maintenance des matériels et des véhicules","2nd pro Métiers de la relation client"]
+    },
+    "Lycée Poinso‑Chapuis": {
+      cap:["CAP Maintenance nautique","CAP Ébéniste"],
+      bac:[],
+      seconde:["2nd pro Métiers de l'agencement, de la menuiserie et de l'ameublement"]
+    },
+    "Lycée Grande Bastide": {
+      cap:[], bac:[],
+      seconde:["2nd pro Métiers de l'hôtellerie‑restauration"]
+    },
+    "Lycée Hôtelier Jean‑Paul Passédat": {
+      cap:["CAP Boulanger","CAP Commercialisation et services en hôtel‑café‑restaurant (CSHCR)","CAP Cuisine","CAP Pâtissier"],
+      bac:[],
+      seconde:["2nd pro Métiers de l'alimentation","2nd pro Métiers de l'hôtellerie‑restauration"]
+    },
+    "Lycée des Calanques": {
+      cap:["CAPa Jardinier paysagiste"],
+      bac:[],
+      seconde:["2nd pro Nature‑Jardin‑Paysage‑Forêt"]
+    },
+    "Lycée Marie-Curie": { hidden:true }
+  };
+  for(const it of LYCEES){ const o=OV[it.nom]; if(o){ if('cap' in o) it.cap=o.cap; if('bac' in o) it.bac=o.bac; if('seconde' in o) it.seconde=o.seconde; if('hidden' in o) it.hidden=o.hidden; } }
+
+  placeSchools();
+
+  // ====== Filtrage par formation ======
+  function normalize(s){ return (s||'').normalize('NFD').replace(/[̀-ͯ]/g,''); }
+  const SYNONYMS = {
+    electricite: ['electricite','électricité','electricien','électricien','melec'],
+    enfance: ['enfance','petite enfance','aepe'],
+    logistique: ['logistique'],
+    nautique: ['nautique','maintenance nautique'],
+    cuisine: ['cuisine'],
+    restauration: ['restauration','psr','csr','hcr','commercialisation et services'],
+    mode: ['mode','vetement','vêtement'],
+    paysagiste: ['paysagiste','jardinier','amenagements paysagers','aménagements paysagers','aménagements'],
+    securite: ['securite','sécurité','agent de securite','agent de sécurité'],
+    coiffure: ['coiffure'],
+    maroquinerie: ['maroquinerie','cuir'],
+    commerce: ['commerce','epc','mcv','vente','accueil'],
+    relationclient: ['relation client','mcv']
+  };
+  function expandQuery(q){
+    q = normalize(q).toLowerCase().trim();
+    if(!q) return [];
+    const out = new Set([q]);
+    for(const k in SYNONYMS){
+      if(q.includes(k)) SYNONYMS[k].forEach(t => out.add(normalize(t).toLowerCase()));
+    }
+    return Array.from(out);
+  }
+  function applyFilter(){
+    const q = document.getElementById('filterInput').value;
+    const countEl = document.getElementById('filterCount');
+    if(!q){ resetFilter(); return; }
+    const terms = expandQuery(q);
+    let shown=0; const shownMarkers=[];
+    schoolMarkers.forEach(obj=>{
+      const hit = terms.some(t => obj.searchText.includes(t));
+      if(hit){ if(!map.hasLayer(obj.marker)) obj.marker.addTo(map); shown++; shownMarkers.push(obj.marker); }
+      else { if(map.hasLayer(obj.marker)) map.removeLayer(obj.marker); }
+    });
+    if(shown>0){ const group=L.featureGroup(shownMarkers); map.fitBounds(group.getBounds().pad(0.2)); }
+    if(countEl){ countEl.style.display='inline-block'; countEl.textContent = shown + ' résultat' + (shown>1?'s':''); }
+  }
+  function resetFilter(){
+    const countEl = document.getElementById('filterCount');
+    schoolMarkers.forEach(obj=>{ if(!map.hasLayer(obj.marker)) obj.marker.addTo(map); });
+    if(countEl){ countEl.style.display='none'; }
+  }
+  document.getElementById('applyFilter').onclick = applyFilter;
+  document.getElementById('resetFilter').onclick = ()=>{ document.getElementById('filterInput').value=''; resetFilter(); };
+  document.getElementById('filterInput').addEventListener('keydown', (e)=>{ if(e.key==='Enter'){ applyFilter(); updateChipsUI(); } });
+}
+</script>
+<script>
+(function(){
+  // Assure la présence du conteneur d'étiquette et met à jour l'UI quelle que soit l'ordre de chargement
+  const toolbar=document.querySelector('.toolbar');
+  if(toolbar && !document.getElementById('activeFilters')){
+    const d=document.createElement('div'); d.id='activeFilters'; d.className='chips'; d.style.display='none'; toolbar.appendChild(d);
+  }
+  function sanitize(t){ return t.replace(/[&<>"']/g, m=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;' }[m])); }
+  function updateChipsUI(){
+    const chipsEl=document.getElementById('activeFilters');
+    const fi=document.getElementById('filterInput');
+    const q=(fi&&fi.value||'').trim();
+    if(!chipsEl) return;
+    if(q){
+      chipsEl.innerHTML = '<span class="chip">'+sanitize(q)+' <button title="Retirer">×</button></span>';
+      chipsEl.style.display='flex';
+      const btn=chipsEl.querySelector('button');
+      if(btn) btn.onclick = ()=>{ if(fi){ fi.value=''; } if(typeof resetFilter==='function'){ resetFilter(); } updateChipsUI(); };
+    } else { chipsEl.style.display='none'; chipsEl.innerHTML=''; }
+  }
+  // Greffe sur les boutons existants (sans casser le code en place)
+  const applyBtn=document.getElementById('applyFilter');
+  if(applyBtn){ const prev=applyBtn.onclick; applyBtn.onclick=()=>{ if(typeof prev==='function') prev(); if(typeof updateChipsUI==='function'){}; updateChipsUI(); }; }
+  const resetBtn=document.getElementById('resetFilter');
+  if(resetBtn){ const prevR=resetBtn.onclick; resetBtn.onclick=()=>{ if(typeof prevR==='function') prevR(); updateChipsUI(); }; }
+  const fi=document.getElementById('filterInput');
+  if(fi){ fi.addEventListener('keydown', e=>{ if(e.key==='Enter'){ if(typeof applyFilter==='function') applyFilter(); updateChipsUI(); } }); }
+})();
+</script>
+</body>
+</html>
