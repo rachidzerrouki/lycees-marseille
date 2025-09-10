@@ -23,31 +23,29 @@
     .tag{ display:inline-block; padding:2px 6px; border-radius:6px; background:#f1f5f9; border:1px solid #e5e7eb; font-size:12px; white-space:normal; margin:2px; }
     .row{ margin-top:6px; }
     .gt-logo{ width:28px; height:28px; display:grid; place-items:center; border-radius:50%; background:#fff; border:2px solid #fff; box-shadow:0 1px 3px rgba(0,0,0,.35); overflow:hidden; }
-.gt-logo img{ width:100%; height:100%; object-fit:cover; display:block; }
-.brandLogo{ height:22px; width:auto; display:block; }
+    .gt-logo img{ width:100%; height:100%; object-fit:cover; display:block; }
+    .brandLogo{ height:22px; width:auto; display:block; }
     .toolbar{ position:fixed; left:12px; top:12px; z-index:10001; background:#fff; border:1px solid #e5e7eb; border-radius:10px; padding:8px 10px; font-size:12px; display:flex; flex-direction:column; gap:6px; }
     .toolbar .from{ display:flex; align-items:center; gap:6px; }
     .toolbar input{ width:260px; padding:6px 8px; font-size:12px; border:1px solid #e5e7eb; border-radius:8px; }
     .toolbar button{ font-size:12px; padding:6px 8px; border:1px solid #e5e7eb; background:#f8fafc; border-radius:8px; cursor:pointer; }
     #status{ position:fixed; left:50%; transform:translateX(-50%); bottom:18px; z-index:10002; background:#0f172acc; color:#e2e8f0; padding:6px 10px; border-radius:8px; font:12px/1.4 Inter,system-ui; }
-/* Légendes & styles supplémentaires */
-.legend{ display:flex; gap:10px; margin-top:6px; flex-wrap:wrap; }
-.leg{ display:flex; align-items:center; gap:6px; font-size:12px; color:#374151; }
-.leg i{ display:inline-block; width:20px; height:4px; border-radius:2px; }
-.leg .m1{ background:var(--m1); } .leg .m2{ background:var(--m2); } .leg .tram{ background:var(--tram); } .leg .bus{ background:var(--bus); } .leg .walk{ background:var(--walk); }
-.panel.small{ padding:8px 10px; font-size:12px; }
-#legendSchools{ position:fixed; left:12px; bottom:12px; z-index:10002; }
-.dot{ width:10px; height:10px; border-radius:50%; display:inline-block; margin-right:6px; border:1px solid #fff; box-shadow:0 0 0 1px #e5e7eb inset; }
-.dot.pub{ background:var(--public); }
-.dot.priv{ background:var(--prive); }
-/* Remonter légèrement le zoom +/- */
-.leaflet-bottom.leaflet-left .leaflet-control-zoom{ margin-bottom:120px; }
-  #brandBR{ position:fixed; right:12px; bottom:12px; z-index:10002; background:transparent; border:none; box-shadow:none; }
-#brandBR img{ height:132px;  width:auto; opacity:.95; display:block; }
-.gt-emoji{ width:26px; height:26px; display:grid; place-items:center; border-radius:999px; background:#fff; border:2px solid #fff; box-shadow:0 1px 3px rgba(0,0,0,.35); font-size:14px; }
-.toolbar .filter{ display:flex; align-items:center; gap:6px; }
-.count{ padding:2px 6px; border-radius:999px; background:#eef2ff; border:1px solid #e5e7eb; font-size:11px; color:#334155; }
-</style>
+    .legend{ display:flex; gap:10px; margin-top:6px; flex-wrap:wrap; }
+    .leg{ display:flex; align-items:center; gap:6px; font-size:12px; color:#374151; }
+    .leg i{ display:inline-block; width:20px; height:4px; border-radius:2px; }
+    .leg .m1{ background:var(--m1); } .leg .m2{ background:var(--m2); } .leg .tram{ background:var(--tram); } .leg .bus{ background:var(--bus); } .leg .walk{ background:var(--walk); }
+    .panel.small{ padding:8px 10px; font-size:12px; }
+    #legendSchools{ position:fixed; left:12px; bottom:12px; z-index:10002; }
+    .dot{ width:10px; height:10px; border-radius:50%; display:inline-block; margin-right:6px; border:1px solid #fff; box-shadow:0 0 0 1px #e5e7eb inset; }
+    .dot.pub{ background:var(--public); }
+    .dot.priv{ background:var(--prive); }
+    .leaflet-bottom.leaflet-left .leaflet-control-zoom{ margin-bottom:120px; }
+    #brandBR{ position:fixed; right:12px; bottom:12px; z-index:10002; background:transparent; border:none; box-shadow:none; }
+    #brandBR img{ height:132px;  width:auto; opacity:.95; display:block; }
+    .gt-emoji{ width:26px; height:26px; display:grid; place-items:center; border-radius:999px; background:#fff; border:2px solid #fff; box-shadow:0 1px 3px rgba(0,0,0,.35); font-size:14px; }
+    .toolbar .filter{ display:flex; align-items:center; gap:6px; }
+    .count{ padding:2px 6px; border-radius:999px; background:#eef2ff; border:1px solid #e5e7eb; font-size:11px; color:#334155; }
+  </style>
 </head>
 <body>
 <noscript>Active JavaScript pour voir la carte.</noscript>
@@ -66,7 +64,7 @@
 </div>
 <div id="routePanel" class="panel">
   <h4>Itinéraire (départ 07:30)</h4>
-  <div>Temps total : <span id="routeTime" class="time">—</span></div>
+  <div>Temps total : <span id="routeTime" class="time">—</span></div>
   <div id="routeSteps" class="row"></div>
   <div class="legend">
     <div class="leg"><i class="m1"></i>Métro M1</div>
@@ -213,8 +211,25 @@ function onGoogleReady(){
     const ac = new google.maps.places.Autocomplete(originInput,{ componentRestrictions:{country:'fr'}, fields:['geometry','formatted_address','name'] });
     ac.addListener('place_changed', ()=>{ const p=ac.getPlace(); if(p?.geometry?.location){ const lat=p.geometry.location.lat(), lon=p.geometry.location.lng(); setOrigin(lat,lon,p.formatted_address||p.name); }});
   }catch(e){ console.warn('Autocomplete KO', e); }
-  originInput.addEventListener('keydown', e=>{ if(e.key==='Enter'){ const q=originInput.value.trim(); if(!q) return; placesSvc.findPlaceFromQuery({ query:q, fields:['geometry','name','formatted_address'] }, (res,status)=>{ if(status===google.maps.places.PlacesServiceStatus.OK && res?.[0]?.geometry){ const g=res[0].geometry.location; setOrigin(g.lat(), g.lng(), res[0].formatted_address||res[0].name); } }); } });
-  useLocBtn.onclick = ()=>{ if(navigator.geolocation){ navigator.geolocation.getCurrentPosition(pos=>{ setOrigin(pos.coords.latitude, pos.coords.longitude, 'Ma position'); }, ()=> alert('Position inaccessible.')); } else { alert('Géolocalisation non supportée.'); } };
+  originInput.addEventListener('keydown', e=>{
+    if(e.key==='Enter'){
+      const q=originInput.value.trim(); if(!q) return;
+      placesSvc.findPlaceFromQuery({ query:q, fields:['geometry','name','formatted_address'] }, (res,status)=>{
+        if(status==='OK' && res?.[0]?.geometry){
+          const g=res[0].geometry.location;
+          setOrigin(g.lat(), g.lng(), res[0].formatted_address||res[0].name);
+        }
+      });
+    }
+  });
+  useLocBtn.onclick = ()=>{
+    if(navigator.geolocation){
+      navigator.geolocation.getCurrentPosition(
+        pos=>{ setOrigin(pos.coords.latitude, pos.coords.longitude, 'Ma position'); },
+        ()=> alert('Position inaccessible.')
+      );
+    } else { alert('Géolocalisation non supportée.'); }
+  };
 
   function setOrigin(lat, lon, label){
     ORIGIN = {lat, lon, label:label||'Départ'};
@@ -244,7 +259,7 @@ function onGoogleReady(){
       region: 'FR', provideRouteAlternatives: false
     }, (res,status)=>{
       routeLayerGroup.clearLayers();
-      if(status!==google.maps.DirectionsStatus.OK){ setStatus('Itinéraire indisponible ('+status+')'); routePanel.style.display='none'; return; }
+      if(status!=='OK'){ setStatus('Itinéraire indisponible ('+status+')'); routePanel.style.display='none'; return; }
       const leg = res.routes[0].legs[0];
       let totalSec = 0; const stepsOut=[];
       leg.steps.forEach(st=>{
@@ -335,7 +350,7 @@ function onGoogleReady(){
       seconde:["2nd pro Métiers de la relation client","2nd pro Métiers des transitions numérique et énergétique"]
     },
     "Lycée La Calade – Jane Vialle": {
-      cap:["CAP Esthétique cosmétique parfumerie","CAP Métiers de la mode – Vêtement flou","CAP Équipier polyvalent du commerce"],
+      cap:["CAP Esthétique cosmétique parfumerie","CAP Métiers de la mode – Vêtement flou","CAP Équipier polyvalent du commerce (EPC)"],
       bac:[],
       seconde:["2nd pro Métiers de la gestion administrative, du transport et de la logistique","2nd pro Métiers de la relation client"]
     },
@@ -359,7 +374,7 @@ function onGoogleReady(){
       bac:[],
       seconde:["2nd pro Métiers des industries graphiques et de la communication","2nd pro Métiers des transitions numérique et énergétique","2nd pro Métiers du pilotage et de la maintenance d'installations automatisées"]
     },
-    "Lycée Saint‑Michel": {
+    "Lycée Saint-Michel": {
       cap:[], bac:[],
       seconde:["2nd pro Métiers de la gestion administrative, du transport et de la logistique","2nd pro Métiers de la relation client"]
     },
@@ -398,115 +413,119 @@ function onGoogleReady(){
       bac:[],
       seconde:["2nd pro Métiers de la gestion administrative, du transport et de la logistique","2nd pro Métiers de la maintenance des matériels et des véhicules","2nd pro Métiers de la relation client"]
     },
-    "Lycée Poinso‑Chapuis": {
+    "Lycée Poinso-Chapuis": {
       cap:["CAP Maintenance nautique","CAP Ébéniste"],
       bac:[],
       seconde:["2nd pro Métiers de l'agencement, de la menuiserie et de l'ameublement"]
     },
     "Lycée Grande Bastide": {
       cap:[], bac:[],
-      seconde:["2nd pro Métiers de l'hôtellerie‑restauration"]
+      seconde:["2nd pro Métiers de l'hôtellerie-restauration"]
     },
-    "Lycée Hôtelier Jean‑Paul Passédat": {
-      cap:["CAP Boulanger","CAP Commercialisation et services en hôtel‑café‑restaurant (CSHCR)","CAP Cuisine","CAP Pâtissier"],
+    "Lycée Hôtelier Jean-Paul Passédat": {
+      cap:["CAP Boulanger","CAP Commercialisation et services en hôtel-café-restaurant (CSHCR)","CAP Cuisine","CAP Pâtissier"],
       bac:[],
-      seconde:["2nd pro Métiers de l'alimentation","2nd pro Métiers de l'hôtellerie‑restauration"]
+      seconde:["2nd pro Métiers de l'alimentation","2nd pro Métiers de l'hôtellerie-restauration"]
     },
     "Lycée des Calanques": {
       cap:["CAPa Jardinier paysagiste"],
       bac:[],
-      seconde:["2nd pro Nature‑Jardin‑Paysage‑Forêt"]
+      seconde:["2nd pro Nature-Jardin-Paysage-Forêt"]
     },
-    "Lycée Marie-Curie": { hidden:true }
+    // Masquage (même si non présent dans LYCEES, garde la logique)
+    "Lycée Marie-Curie": { hidden:true },
+
+    /* Écoles supplémentaires (si tu les ajoutes dans LYCEES plus tard, les overrides seront prêts) */
+    "Lycée Léau": {
+      cap: [
+        "CAP Esthétique cosmétique parfumerie",
+        "CAP Métiers de l’entretien des textiles (option B pressing)",
+        "CAP Métiers de la coiffure",
+        "CAP Équipier polyvalent du commerce"
+      ],
+      bac: [],
+      seconde: [
+        "2nd pro Métiers de la beauté et du bien-être",
+        "2nd pro Métiers de la relation client"
+      ]
+    },
+    "Lycée Charlotte Grawitz": {
+      cap: [
+        "CAP Accompagnant éducatif petite enfance (AEPE)",
+        "CAP Agent accompagnant au grand âge",
+        "CAP Commercialisation et services en hôtel-café-restaurant (CSHCR)",
+        "CAP Cuisine",
+        "CAP Esthétique cosmétique parfumerie",
+        "CAP Production et service en restaurations (rapide, collective, cafétéria) (PSR)",
+        "CAP Équipier polyvalent du commerce (EPC)"
+      ],
+      bac: [],
+      seconde: [
+        "2nd pro Métiers de la beauté et du bien-être",
+        "2nd pro Métiers de la gestion administrative, du transport et de la logistique",
+        "2nd pro Métiers de la relation client"
+      ]
+    },
+    "Lycée Le Châtelier": {
+      cap: [
+        "CAP Carrossier automobile",
+        "CAP Maintenance des véhicules – option véhicules légers",
+        "CAP Peintre en carrosserie"
+      ],
+      bac: [],
+      seconde: [
+        "2nd pro Métiers de la gestion administrative, du transport et de la logistique",
+        "2nd pro Métiers des transitions numérique et énergétique",
+        "2nd pro Métiers du pilotage et de la maintenance d'installations automatisées"
+      ]
+    },
+    "Lycée René Caillié": {
+      cap: [
+        "CAP Maçon",
+        "CAP Menuisier aluminium-verre (MAV)",
+        "CAP Monteur en installations sanitaires",
+        "CAP Monteur en installations thermiques",
+        "CAP Peintre applicateur de revêtements",
+        "CAP Électricien"
+      ],
+      bac: [],
+      seconde: [
+        "2nd pro Métiers de la construction durable (BTP)",
+        "2nd pro Métiers des transitions numérique et énergétique",
+        "2nd pro Études et modélisation numérique du bâtiment"
+      ]
+    },
+    "Lycée Marie Gasquet": {
+      cap: [],
+      bac: [],
+      seconde: [
+        "2nd pro Métiers de la gestion administrative, du transport et de la logistique",
+        "2nd pro Métiers de la relation client"
+      ]
+    },
+    "Lycée César Baldaccini": {
+      cap: [
+        "CAP Art et techniques de la bijouterie-joaillerie – option bijouterie-joaillerie",
+        "CAP Horlogerie",
+        "CAP Sérigraphie industrielle"
+      ],
+      bac: [],
+      seconde: [] /* complète si besoin */
+    }
   };
 
-  "Lycée Léau": {
-  cap: [
-    "CAP Esthétique cosmétique parfumerie",
-    "CAP Métiers de l’entretien des textiles (option B pressing)",
-    "CAP Métiers de la coiffure",
-    "CAP Équipier polyvalent du commerce"
-  ],
-  bac: [],
-  seconde: [
-    "2nd pro Métiers de la beauté et du bien-être",
-    "2nd pro Métiers de la relation client"
-  ]
-},
-
-"Lycée Charlotte Grawitz": {
-  cap: [
-    "CAP Accompagnant éducatif petite enfance (AEPE)",
-    "CAP Agent accompagnant au grand âge",
-    "CAP Commercialisation et services en hôtel-café-restaurant (CSHCR)",
-    "CAP Cuisine",
-    "CAP Esthétique cosmétique parfumerie",
-    "CAP Production et service en restaurations (rapide, collective, cafétéria) (PSR)",
-    "CAP Équipier polyvalent du commerce (EPC)"
-  ],
-  bac: [],
-  seconde: [
-    "2nd pro Métiers de la beauté et du bien-être",
-    "2nd pro Métiers de la gestion administrative, du transport et de la logistique",
-    "2nd pro Métiers de la relation client"
-  ]
-},
-
-"Lycée Le Châtelier": {
-  cap: [
-    "CAP Carrossier automobile",
-    "CAP Maintenance des véhicules – option véhicules légers",
-    "CAP Peintre en carrosserie"
-  ],
-  bac: [],
-  seconde: [
-    "2nd pro Métiers de la gestion administrative, du transport et de la logistique",
-    "2nd pro Métiers des transitions numérique et énergétique",
-    "2nd pro Métiers du pilotage et de la maintenance d'installations automatisées"
-  ]
-},
-
-"Lycée René Caillié": {
-  cap: [
-    "CAP Maçon",
-    "CAP Menuisier aluminium-verre (MAV)",
-    "CAP Monteur en installations sanitaires",
-    "CAP Monteur en installations thermiques",
-    "CAP Peintre applicateur de revêtements",
-    "CAP Électricien"
-  ],
-  bac: [],
-  seconde: [
-    "2nd pro Métiers de la construction durable (BTP)",
-    "2nd pro Métiers des transitions numérique et énergétique",
-    "2nd pro Études et modélisation numérique du bâtiment"
-  ]
-},
-
-"Lycée Marie Gasquet": {
-  cap: [],
-  bac: [],
-  seconde: [
-    "2nd pro Métiers de la gestion administrative, du transport et de la logistique",
-    "2nd pro Métiers de la relation client"
-  ]
-},
-
-"Lycée César Baldaccini": {
-  cap: [
-    "CAP Art et techniques de la bijouterie-joaillerie – option bijouterie-joaillerie",
-    "CAP Horlogerie",
-    "CAP Sérigraphie industrielle"
-  ],
-  bac: [],
-  seconde: [
-    "2
-
-  for(const it of LYCEES){ const o=OV[it.nom]; if(o){ if('cap' in o) it.cap=o.cap; if('bac' in o) it.bac=o.bac; if('seconde' in o) it.seconde=o.seconde; if('hidden' in o) it.hidden=o.hidden; } }
+  for(const it of LYCEES){
+    const o=OV[it.nom];
+    if(o){
+      if('cap' in o) it.cap=o.cap;
+      if('bac' in o) it.bac=o.bac;
+      if('seconde' in o) it.seconde=o.seconde;
+      if('hidden' in o) it.hidden=o.hidden;
+    }
+  }
 
   placeSchools();
 
- 
   // ====== Filtrage par formation ======
   function normalize(s){ return (s||'').normalize('NFD').replace(/[̀-ͯ]/g,''); }
   const SYNONYMS = {
@@ -546,6 +565,7 @@ function onGoogleReady(){
     });
     if(shown>0){ const group=L.featureGroup(shownMarkers); map.fitBounds(group.getBounds().pad(0.2)); }
     if(countEl){ countEl.style.display='inline-block'; countEl.textContent = shown + ' résultat' + (shown>1?'s':''); }
+    if(typeof window.updateChipsUI==='function'){ window.updateChipsUI(); }
   }
   function resetFilter(){
     const countEl = document.getElementById('filterCount');
@@ -553,8 +573,8 @@ function onGoogleReady(){
     if(countEl){ countEl.style.display='none'; }
   }
   document.getElementById('applyFilter').onclick = applyFilter;
-  document.getElementById('resetFilter').onclick = ()=>{ document.getElementById('filterInput').value=''; resetFilter(); };
-  document.getElementById('filterInput').addEventListener('keydown', (e)=>{ if(e.key==='Enter'){ applyFilter(); updateChipsUI(); } });
+  document.getElementById('resetFilter').onclick = ()=>{ document.getElementById('filterInput').value=''; resetFilter(); if(typeof window.updateChipsUI==='function'){ window.updateChipsUI(); } };
+  document.getElementById('filterInput').addEventListener('keydown', (e)=>{ if(e.key==='Enter'){ applyFilter(); } });
 }
 </script>
 <script>
@@ -565,7 +585,7 @@ function onGoogleReady(){
     const d=document.createElement('div'); d.id='activeFilters'; d.className='chips'; d.style.display='none'; toolbar.appendChild(d);
   }
   function sanitize(t){ return t.replace(/[&<>"']/g, m=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;' }[m])); }
-  function updateChipsUI(){
+  window.updateChipsUI = function(){
     const chipsEl=document.getElementById('activeFilters');
     const fi=document.getElementById('filterInput');
     const q=(fi&&fi.value||'').trim();
@@ -574,16 +594,16 @@ function onGoogleReady(){
       chipsEl.innerHTML = '<span class="chip">'+sanitize(q)+' <button title="Retirer">×</button></span>';
       chipsEl.style.display='flex';
       const btn=chipsEl.querySelector('button');
-      if(btn) btn.onclick = ()=>{ if(fi){ fi.value=''; } if(typeof resetFilter==='function'){ resetFilter(); } updateChipsUI(); };
+      if(btn) btn.onclick = ()=>{ if(fi){ fi.value=''; } if(typeof resetFilter==='function'){ resetFilter(); } window.updateChipsUI(); };
     } else { chipsEl.style.display='none'; chipsEl.innerHTML=''; }
-  }
+  };
   // Greffe sur les boutons existants (sans casser le code en place)
   const applyBtn=document.getElementById('applyFilter');
-  if(applyBtn){ const prev=applyBtn.onclick; applyBtn.onclick=()=>{ if(typeof prev==='function') prev(); if(typeof updateChipsUI==='function'){}; updateChipsUI(); }; }
+  if(applyBtn){ const prev=applyBtn.onclick; applyBtn.onclick=()=>{ if(typeof prev==='function') prev(); window.updateChipsUI(); }; }
   const resetBtn=document.getElementById('resetFilter');
-  if(resetBtn){ const prevR=resetBtn.onclick; resetBtn.onclick=()=>{ if(typeof prevR==='function') prevR(); updateChipsUI(); }; }
+  if(resetBtn){ const prevR=resetBtn.onclick; resetBtn.onclick=()=>{ if(typeof prevR==='function') prevR(); window.updateChipsUI(); }; }
   const fi=document.getElementById('filterInput');
-  if(fi){ fi.addEventListener('keydown', e=>{ if(e.key==='Enter'){ if(typeof applyFilter==='function') applyFilter(); updateChipsUI(); } }); }
+  if(fi){ fi.addEventListener('keydown', e=>{ if(e.key==='Enter'){ if(typeof applyFilter==='function') applyFilter(); window.updateChipsUI(); } }); }
 })();
 </script>
 </body>
