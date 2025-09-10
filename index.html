@@ -419,147 +419,94 @@ function onGoogleReady(){
     },
     "Lycée Marie-Curie": { hidden:true }
   };
+
+  "Lycée Léau": {
+  cap: [
+    "CAP Esthétique cosmétique parfumerie",
+    "CAP Métiers de l’entretien des textiles (option B pressing)",
+    "CAP Métiers de la coiffure",
+    "CAP Équipier polyvalent du commerce"
+  ],
+  bac: [],
+  seconde: [
+    "2nd pro Métiers de la beauté et du bien-être",
+    "2nd pro Métiers de la relation client"
+  ]
+},
+
+"Lycée Charlotte Grawitz": {
+  cap: [
+    "CAP Accompagnant éducatif petite enfance (AEPE)",
+    "CAP Agent accompagnant au grand âge",
+    "CAP Commercialisation et services en hôtel-café-restaurant (CSHCR)",
+    "CAP Cuisine",
+    "CAP Esthétique cosmétique parfumerie",
+    "CAP Production et service en restaurations (rapide, collective, cafétéria) (PSR)",
+    "CAP Équipier polyvalent du commerce (EPC)"
+  ],
+  bac: [],
+  seconde: [
+    "2nd pro Métiers de la beauté et du bien-être",
+    "2nd pro Métiers de la gestion administrative, du transport et de la logistique",
+    "2nd pro Métiers de la relation client"
+  ]
+},
+
+"Lycée Le Châtelier": {
+  cap: [
+    "CAP Carrossier automobile",
+    "CAP Maintenance des véhicules – option véhicules légers",
+    "CAP Peintre en carrosserie"
+  ],
+  bac: [],
+  seconde: [
+    "2nd pro Métiers de la gestion administrative, du transport et de la logistique",
+    "2nd pro Métiers des transitions numérique et énergétique",
+    "2nd pro Métiers du pilotage et de la maintenance d'installations automatisées"
+  ]
+},
+
+"Lycée René Caillié": {
+  cap: [
+    "CAP Maçon",
+    "CAP Menuisier aluminium-verre (MAV)",
+    "CAP Monteur en installations sanitaires",
+    "CAP Monteur en installations thermiques",
+    "CAP Peintre applicateur de revêtements",
+    "CAP Électricien"
+  ],
+  bac: [],
+  seconde: [
+    "2nd pro Métiers de la construction durable (BTP)",
+    "2nd pro Métiers des transitions numérique et énergétique",
+    "2nd pro Études et modélisation numérique du bâtiment"
+  ]
+},
+
+"Lycée Marie Gasquet": {
+  cap: [],
+  bac: [],
+  seconde: [
+    "2nd pro Métiers de la gestion administrative, du transport et de la logistique",
+    "2nd pro Métiers de la relation client"
+  ]
+},
+
+"Lycée César Baldaccini": {
+  cap: [
+    "CAP Art et techniques de la bijouterie-joaillerie – option bijouterie-joaillerie",
+    "CAP Horlogerie",
+    "CAP Sérigraphie industrielle"
+  ],
+  bac: [],
+  seconde: [
+    "2
+
   for(const it of LYCEES){ const o=OV[it.nom]; if(o){ if('cap' in o) it.cap=o.cap; if('bac' in o) it.bac=o.bac; if('seconde' in o) it.seconde=o.seconde; if('hidden' in o) it.hidden=o.hidden; } }
 
   placeSchools();
 
-  // À coller dans ton fichier de données (ex: src/data/lycees.ts)
-// ou à merger dans l’array existant.
-
-export const LYCEES_AJOUTS = [
-  {
-    id: "leau-13008",
-    nom: "Lycée professionnel Leau",
-    adresse: "63 Boulevard Leau, 13008 Marseille",
-    statut: "Public",
-    localisation: { lat: 43.25415, lng: 5.38519 }, // Mappy
-    programmes: {
-      cap: [
-        "Esthétique cosmétique parfumerie",
-        "Métiers de l’entretien des textiles (option B pressing)",
-        "Métiers de la coiffure",
-        "Équipier polyvalent du commerce"
-      ],
-      seconde_pro: [
-        "Métiers de la beauté et du bien-être",
-        "Métiers de la relation client"
-      ]
-    },
-    liens: {
-      site: "http://www.lyc-leau.ac-aix-marseille.fr/"
-    }
-  },
-  {
-    id: "charlotte-grawitz-13013",
-    nom: "Lycée Charlotte Grawitz",
-    adresse: "20 Chemin de Château Gombert, 13013 Marseille",
-    statut: "Privé",
-    localisation: { lat: 43.33495, lng: 5.42072 }, // Mappy
-    programmes: {
-      cap: [
-        "AEPE",
-        "Agent accompagnant au grand âge",
-        "CSHCR",
-        "Cuisine",
-        "Esthétique cosmétique parfumerie",
-        "PSR",
-        "EPC"
-      ],
-      seconde_pro: [
-        "Métiers de la beauté et du bien-être",
-        "GA/TL",
-        "Relation client"
-      ]
-    },
-    liens: {
-      site: "https://www.provence-formation.fr/lycees/lycee-charlotte-grawitz"
-    }
-  },
-  {
-    id: "le-chatelier-13003",
-    nom: "Lycée Le Châtelier",
-    adresse: "108 Avenue Roger Salengro, 13003 Marseille",
-    statut: "Public",
-    localisation: { lat: 43.31395, lng: 5.37099 }, // Mappy
-    programmes: {
-      cap: [
-        "Carrossier auto",
-        "Maintenance des véhicules (VL)",
-        "Peintre auto"
-      ],
-      seconde_pro: [
-        "GA/TL",
-        "TNE",
-        "Pilotage & maintenance d’installations automatisées"
-      ]
-    },
-    liens: {
-      site: "http://www.lyc-chatelier.ac-aix-marseille.fr/"
-    }
-  },
-  {
-    id: "rene-caillie-13011",
-    nom: "Lycée René Caillié",
-    adresse: "173 Boulevard de Saint-Loup, 13011 Marseille",
-    statut: "Public",
-    localisation: { lat: 43.28478, lng: 5.43770 }, // Mappy
-    programmes: {
-      cap: [
-        "Maçon",
-        "MAV",
-        "Monteur sanitaires",
-        "Monteur thermiques",
-        "Peintre applicateur de revêtements",
-        "Électricien"
-      ],
-      seconde_pro: [
-        "Construction durable/BTP",
-        "TNE",
-        "Études & modélisation numérique du bâtiment"
-      ]
-    },
-    liens: {
-      site: "http://www.lyc-caillie.ac-aix-marseille.fr/"
-    }
-  },
-  {
-    id: "marie-gasquet-13012",
-    nom: "Lycée Marie Gasquet",
-    adresse: "38 Rue des Électriciens, 13012 Marseille",
-    statut: "Privé",
-    localisation: { lat: 43.30501, lng: 5.41707 }, // Mappy
-    programmes: {
-      cap: [],
-      seconde_pro: ["GA/TL", "Relation client"]
-    },
-    liens: {
-      site: "http://www.lycee-marie-gasquet.eu/"
-    }
-  },
-  {
-    id: "cesar-baldaccini-13007",
-    nom: "Lycée César Baldaccini (ex-Rempart)",
-    adresse: "1 Rue du Rempart, 13007 Marseille",
-    statut: "Public",
-    localisation: { lat: 43.28893, lng: 5.36520 }, // Mappy
-    programmes: {
-      cap: [
-        "Art et techniques de la bijouterie-joaillerie (option bijouterie-joaillerie)",
-        "Horlogerie",
-        "Sérigraphie industrielle"
-      ],
-      seconde_pro: [
-        "Métiers des industries graphiques et de la communication",
-        "Métiers des transitions numérique et énergétique"
-      ]
-    },
-    liens: {
-      site: "http://www.lyc-rempart.ac-aix-marseille.fr/"
-    }
-  }
-];
-
-
+ 
   // ====== Filtrage par formation ======
   function normalize(s){ return (s||'').normalize('NFD').replace(/[̀-ͯ]/g,''); }
   const SYNONYMS = {
